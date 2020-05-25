@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入样式 -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <template>
+        <el-table :data="mydatatable" stripe style="width: 100%">
+          <el-table-column prop="序号" label="序号" width="50">
+          </el-table-column>
+          <el-table-column prop="姓名" label="姓名" width="80">
+          </el-table-column>
+          <el-table-column prop="职务工资" label="职务工资(岗位工资)">
+          </el-table-column>
+          <el-table-column prop="级别工资" label="级别工资(技术等级工资)">
+          </el-table-column>
+          <el-table-column prop="月基本工资合计" label="月基本工资合计">
+          </el-table-column>
+          <el-table-column prop="津补贴" label="津补贴"> </el-table-column>
+          <el-table-column prop="车补" label="车补"> </el-table-column>
+          <el-table-column prop="工资调整" label="工资调整"> </el-table-column>
+          <el-table-column prop="文明单位奖金" label="文明单位奖金">
+          </el-table-column>
+          <el-table-column prop="综治奖金" label="综治奖金"> </el-table-column>
+          <el-table-column prop="绩效奖金" label="绩效奖金"> </el-table-column>
+          <el-table-column prop="第十三月工资" label="第十三月工资">
+          </el-table-column>
+          <el-table-column prop="应发金额" label="应发金额"> </el-table-column>
+          <el-table-column prop="住房公积金缴费额" label="住房公积金缴费额">
+          </el-table-column>
+          <el-table-column prop="养老保险缴费额" label="养老保险缴费额">
+          </el-table-column>
+          <el-table-column prop="职业年金缴费额" label="职业年金缴费额">
+          </el-table-column>
+          <el-table-column prop="医疗保险缴费额" label="医疗保险缴费额">
+          </el-table-column>
+          <el-table-column prop="医疗补贴" label="医疗补贴"> </el-table-column>
+          <el-table-column prop="扣缴费小计" label="扣缴费小计">
+          </el-table-column>
+          <el-table-column prop="实发金额" label="实发金额"> </el-table-column>
+          <el-table-column prop="邮箱" label="邮箱"> </el-table-column>
+          <el-table-column fixed="right" label="操作" width="120">
+            <template slot-scope="scope">
+              <el-button
+                @click.native.prevent="sendemail(scope.$index, mydatatable)"
+                ref="sendbtn"
+                type="text"
+                size="small"
+              >
+                发邮件
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </template>
+      <el-upload
+        class="upload-demo"
+        ref="upload"
+        :on-change="changeUpload"
+        :on-success="UploadFileSuccess"
+        action="limannlee"
+        :before-upload="beforeAvatarUpload"
+        :file-list="fileList"
+        :limit="1"
+        :auto-upload="false"
+      >
+        <el-button slot="trigger" size="small" type="primary"
+          >选取文件</el-button
+        >
+        <el-button
+          style="margin-left: 10px;"
+          size="small"
+          type="success"
+          @click="submitUpload"
+          >上传到服务器</el-button
+        >
+        <div slot="tip" class="el-upload__tip">
+          只能上传xls/xlsx文件，且不超过2M
+        </div>
+      </el-upload>
+      <!-- :before-upload="beforeAvatarUpload"
+            :on-preview="handlePreview"
+            :on-remove="handleRemove"
+            :on-progress="showProgress" -->
+    </div>
+  </body>
+  <script>
+    new Vue({
+      el: "#app",
+      data: function() {
+        return {
+          fileList: [],
+          visible: false,
+          mydatatable: [],
+          SheetNames: ""
+        };
+      },
+      mounted() {
+        // axios.get('http://localhost:3002/api/readxslx')
+        //     .then(res=>{
+        //         let stream=res.data.stream['1月份工资明细表'];
+        //         let newtable=this.xlsx2table(stream)
+        //         this.mydatatable=newtable.rows;
+        //         console.log(this.mydatatable)
+        //         // console.log(this.mydatatable[0].职务工资(岗位工资));
+        //     })
+        //      .catch(function(err){
+        //         console.log(err);
+        //     });
+      },
+      methods: {
+        sendemail(index, rows) {
+          // rows.splice(index, 1);
+          // rows[index].邮箱
+          if (rows[index].邮箱 == "" || rows[index].邮箱 == undefined) {
+            this.$message({
+              message: "邮箱账号为空",
+              type: "waring"
+            });
+            return false;
+          }
+          let emailbody = rows[index];
+          emailbody.title = this.SheetNames;
+          // let email={
+          //     mailbody:emailbody
+          // }
+          let email = emailbody;
+          axios
+            .get("http://localhost:3002/api/gomail", { params: email })
+            .then(res => {
+              if (res.data.status == "250 Ok: queued as ") {
+                this.$message({
+                  message: "邮件发送成功",
+                  type: "success"
+                });
+                console.log(this.$refs.sendbtn);
+              }
+              console.log(res);
+            })
+            .catch(function(error) {
+              alert(error);
+            });
+          // axios.post('http://localhost:3002/api/sendemail',email).then(res=>{
+
+          //       console.log(res);
+          //     //  let SheetNames=res.data.stream.SheetNames[0]
+          //     //  console.log(SheetNames);
+          //     //   let stream=res.data.stream.Sheets[SheetNames];
+          //     //   let newtable=this.xlsx2table(stream)
+          //     //   this.mydatatable=newtable.rows;
+          // })
+        },
+        UploadFileSuccess(response, file, fileList) {
+          let status = file.status;
+          if (status == "success") {
+            this.$message({
+              message: "上传审批表成功！",
+              type: "success"
+            });
+          }
+        },
+        beforeAvatarUpload(file) {
+          if (!this.Validation(file)) {
+            return false;
+          }
+          let fd = new FormData();
+          let filename = this.Getfilesname(file);
+          // console.log(file)
+          fd.append("file", file); //传文件
+          fd.append("filename", filename);
+          // fd.append('srid',this.aqForm.srid);传其他参数
+          axios
+            .post("http://localhost:3002/api/upload", fd, {
+              "Content-Type": "multipart/form-data"
+            })
+            .then(res => {
+              //  console.log(res);
+              this.SheetNames = res.data.stream.SheetNames[0];
+              let stream = res.data.stream.Sheets[this.SheetNames];
+              let newtable = this.xlsx2table(stream);
+              this.mydatatable = newtable.rows;
+            });
+        },
+        submitUpload() {
+          this.$refs.upload.submit();
+        },
+        Getfilesname(file) {
+          var testmsg = file.name.substring(file.name.lastIndexOf(".") + 1);
+          var myDate = new Date();
+          var myYear = myDate.getFullYear();
+          var myMonth = myDate.getMonth() + 1;
+          var mydate = myDate.getDate();
+          var myHour = myDate.getHours();
+          var myMinute = myDate.getMinutes();
+          var mySecond = myDate.getSeconds();
+          var mytMilliSecond = myDate.getMilliseconds();
+          return (
+            "" +
+            myYear +
+            myMonth +
+            mydate +
+            myHour +
+            myMinute +
+            mySecond +
+            mytMilliSecond +
+            "." +
+            testmsg
+          );
+        },
+        Validation(file) {
+          var testmsg = file.name.substring(file.name.lastIndexOf(".") + 1);
+          const extension = testmsg === "xls";
+          const extension2 = testmsg === "xlsx";
+          const isLt2M = file.size / 1024 / 1024 < 10;
+          if (!extension && !extension2) {
+            this.$message({
+              message: "上传文件只能是 xls、xlsx格式!",
+              type: "warning"
+            });
+            return false;
+          }
+          if (!isLt2M) {
+            this.$message({
+              message: "上传文件大小不能超过 10MB!",
+              type: "warning"
+            });
+            return false;
+          }
+          return extension || (extension2 && isLt2M);
+        },
+        changeUpload(file, fileList) {
+          if (this.Validation(file)) {
+            file.name = this.Getfilesname(file);
+            console.log("选中了" + file.name);
+          } else {
+            this.$message({
+              type: "error",
+              message: "上传文件只能是xls,xlsx后缀"
+            });
+          }
+        },
+        //   upload()
+        //   {
+
+        //       axios.post('http://localhost:3002/api/upload').then(res=>{
+        //        let stream=res.data.stream['1月份工资明细表'];
+        //        let newtable=  this.xlsx2table(stream)
+        //        this.mydatatable=newtable.rows;
+        //     //    console.log(newtable)
+        //     //     console.log(this.tableData);
+        //       }).catch(err=>{
+        //           console.log(err)
+        //       })
+        //   },
+        xlsx2table(xlsx) {
+          var g = {};
+          var reg = /^([A-Z]+)(\d+)$/;
+          for (var k in xlsx) {
+            if (reg.test(k)) {
+              var letter_num = k.match(reg);
+              var letter = letter_num[1];
+              var num = letter_num[2];
+              if (!(letter in g)) {
+                g[letter] = [];
+              }
+              g[letter][num] = xlsx[k].v;
+            }
+          }
+          var rows = [];
+          var header = g["A"];
+          var len = g["B"].length;
+
+          for (var i = 3; i < len; i++) {
+            var obj = {};
+            for (var k in g) {
+              var vals = g[k];
+              var pname = vals[2];
+              if (pname == undefined) {
+                pname = "--" + k;
+              } else {
+                pname = pname.replace(/\s+/g, "");
+                if (pname == "职务工资(岗位工资)") {
+                  pname = "职务工资";
+                }
+                if (pname == "级别工资(技术等级工资)") {
+                  pname = "级别工资";
+                }
+              }
+              obj[pname] = i in vals ? vals[i] : "";
+            }
+            rows.push(obj);
+          }
+          var table = { rows: rows };
+          if (header[1]) {
+            table.title = header[1];
+          }
+          return table;
+        }
+      }
+    });
+  </script>
+</html>

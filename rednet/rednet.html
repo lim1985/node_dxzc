@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <script
+      type="text/javascript"
+      src="http://www.dxzc.gov.cn/Template/Default_Red/Skin/dxzc2017/js/jquery-1.8.3.min.js"
+    ></script>
+  </head>
+  <body>
+    <div id="result"></div>
+    <input type="button" onclick="send()" value="推送" />
+  </body>
+  <script>
+    function send() {
+      var PicTextNews = {
+        title: "稿件标题",
+        summary: "稿件摘要",
+        shortTitle: "稿件短标题",
+        source: "稿源",
+        keyword: "稿件关键词",
+        occurrenceTime: 1546933838182,
+        publishTime: 1546876800000,
+        author: "稿件作者",
+        contentExt: {
+          content: "<p>稿件内容</p>",
+          contentType: 1,
+          displayType: 1,
+          newsType: 1,
+          subtitle: "稿件副标题",
+          newsSharePic:
+            "http://redcloudtest-1254231242.cos.ap-guangzhou.myqcloud.com/2019/01-09/1546998637341-1olurhvvsrm20.png",
+          textLink: "稿件原文链接",
+          newsTag: 57
+        },
+        contentChannels: [
+          {
+            appFlag: 0,
+            channelId: 2325,
+            pcFlag: 1,
+            siteId: 41,
+            sourceFlag: 1,
+            wapFlag: 1
+          }
+        ],
+        contentCovers: [
+          {
+            ratio: "3:2",
+            urlCloud:
+              "http://redcloudtest-1254231242.cos.ap-guangzhou.myqcloud.com/2019/01-09/1546998637341-1olurhvvsrm20.png"
+          }
+        ]
+      };
+      let params = PicTextNews;
+      console.log(params);
+      console.log(JSON.stringify(params));
+      // let url ='http://127.0.0.1:3002/api/toRednet'
+      //         $.ajax({
+      //         type:'POST',
+      //         contentType: "application/json;charset=utf-8",
+      //         data :JSON.stringify(params),
+      //         url: url,
+      //         dataType: 'json',
+      //         success:function(result) {
+      //             $('#result').val=result;
+      //             console.log(result);
+      //         },
+      //         error:function() {
+      //             console.log()
+      //             alert('服务器链接失败。')
+      //             }
+      // })
+    }
+  </script>
+</html>

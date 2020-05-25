@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no ,minimal-ui"
+    />
+    <meta name="x5-orientation" content="portrait" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <title></title>
+    <!-- 引入样式 -->
+    <link
+      rel="stylesheet"
+      href="css/element.index.css"
+      <!--
+      import
+      Vue
+      before
+      Element
+      --
+    />
+
+    <script src="js/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="js/element.js"></script>
+    <script src="js/axios.js"></script>
+    <style>
+      .el-progress-bar__innerText {
+        color: #fff;
+        font-size: 12px;
+        margin: -10px 0 0 0px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <el-upload
+        class="upload-demo"
+        list-type="picture"
+        capture="user"
+        :on-change="changeUpload"
+        accept="image/*"
+        ref="upload"
+        :limit="3"
+        :on-exceed="handleExceed"
+        :on-success="UploadFileSuccess"
+        action="string"
+        :on-preview="handlePreview"
+        :on-remove="handleRemove"
+        :http-request="submitUpload"
+        :auto-upload="false"
+      >
+        <el-button
+          slot="trigger"
+          size="small"
+          ref="SelectBtn"
+          @click="checkbtndisable"
+          :disabled="Btnuse"
+          type="primary"
+          >选取文件</el-button
+        >
+        <el-button
+          style="margin-left: 10px;"
+          size="small"
+          ref="BtnUpload"
+          :disabled="Btnuse"
+          id="upbtn"
+          :type="buttontype"
+          @click="submitfilesupload"
+          >上传到服务器</el-button
+        >
+        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件</div>
+      </el-upload>
+      {{mytitle}}{{status}}
+      <el-progress
+        :visible.sync="dialogVisible"
+        :text-inside="true"
+        :stroke-width="10"
+        :percentage="progressnum"
+        :status="UploadStatus"
+      ></el-progress>
+      <img v-show="showpic" width="100%" :src="viewpic" />
+
+      <!--   <el-upload class="upload-demo"
+                    list-type="picture"
+                    ref="upload"
+                       
+                    action="string"
+                   :on-exceed="uploadOverrun" 
+                   :on-change="changeUpload"
+                    :http-request="submitUpload"
+                   :data="upLoadData"
+                   :before-upload="beforeAvatarUpload"           
+                   :on-preview="handlePreview"                 
+                   :on-success="UploadFileSuccess"             
+                   :on-remove="handleRemove"
+                    capture="user"
+                    accept="image/*"
+                   :auto-upload="false">
+            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+            <el-button style="margin-left: 10px;" size="small" type="success" @click="submitfilesupload">上传到服务器</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传jpg/png文件</div>
+        </el-upload>-->
+
+      <!--   <el-upload class="upload-demo"
+                   ref="upload"
+                   list-type="picture"
+                   action="/savedoc.aspx"
+                   :on-preview="handlePreview"
+                   :on-remove="handleRemove"
+                   :data="upLoadData"
+                   :auto-upload="false">
+            <el-button slot="trigger" size="small" type="primary">选取文件</el-button>
+            <el-button style="margin-left: 10px;" size="small" type="success" @click="submitfilesupload">上传到服务器</el-button>
+            <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+        </el-upload>
+       -->
+    </div>
+  </body>
+</html>
+
+<script>
+  new Vue({
+    el: "#app",
+    data: function() {
+      return {
+        UploadStatus: "success",
+        visible: false,
+        dialogImageUrl: "",
+        dialogVisible: false,
+        upLoadData: {
+          itemid: "",
+          filename: "",
+          imgurl: ""
+        },
+        dataUrl: "",
+        filename: "",
+        progressnum: 0,
+        buttontype: "success",
+        Btnuse: false,
+        viewpic: "",
+        IsApprovalform: "",
+        mytitle: "",
+        showpic: false,
+        status: "",
+        UploadCount: 7
+      };
+    },
+    created() {},
+    mounted() {
+      this.IsApprovalForm();
+    },
+    methods: {
+      checkbtndisable: function() {
+        if (this.$refs.SelectBtn.disabled) {
+          return false;
+        }
+      },
+      CheckUploadStatus: function(c) {
+        if (c.ApprovalForm == "" || c.ApprovalForm == NaN) {
+          this.$message("点击选取文件按钮照相，或者从相册中选择照片上传!");
+        } else {
+          this.Btnuse = true;
+          this.showpic = true;
+          this.$message({
+            message:
+              "你可以查看已经上传的审批表，且不能重复上传，如需修改请和电政办联系！",
+            type: "warning"
+          });
+        }
+      },
+
+      IsApprovalForm: function() {
+        let i = this.getPara()[0].value;
+        axios
+          .get("/ajaxdata.ashx", {
+            params: {
+              ID: i
+            }
+          })
+          .then(response => {
+            var text = response.data.Tables[0].Rows[0];
+
+            this.viewpic =
+              "http://wx.dxzc.gov.cn/UploadFiles" + text.ApprovalForm;
+            this.mytitle = text.Title;
+            this.CheckUploadStatus(text);
+          })
+          //         }).then(function (response) {
+          //     // console.log(response)
+          //     var text = response.data.Tables[0].Rows[0]
+          //     this.viewpic=>text.ApprovalForm;
+          //     // $("#json_time").html(text.InputTime)
+          //     // $("#indexnumber").html(text.IndexNumber)
+          //     // $("#department").html(text.DepartmentName)
+          //     // $("#atitle").html(text.Title)
+          //     // $("#wenhao").html(text.ReferenceNumber)
+          //     // $("#inputime").html(formatdata(text.UpdateTime))
+          .catch(function(error) {
+            console.log(error);
+          });
+      },
+      uploadOnProgress: function(event, file) {
+        //开始上传
+        var complete = event.percent;
+        this.progressnum = complete;
+        console.log(complete);
+      },
+      Getfilesname: function() {
+        var myDate = new Date();
+        var myYear = myDate.getFullYear();
+        var myMonth = myDate.getMonth() + 1;
+        var mydate = myDate.getDate();
+        var myHour = myDate.getHours();
+        var myMinute = myDate.getMinutes();
+        var mySecond = myDate.getSeconds();
+        var mytMilliSecond = myDate.getMilliseconds();
+        return (
+          "" +
+          myYear +
+          myMonth +
+          mydate +
+          myHour +
+          myMinute +
+          mySecond +
+          mytMilliSecond +
+          ".jpg"
+        );
+      },
+      uploadOverrun: function() {
+        this.$message({
+          type: "error",
+          message: "上传文件个数超出限制!最多上传1张图片!"
+        });
+      },
+      changeUpload: function(file, fileList) {
+        //预览图片
+
+        if (this.beforeAvatarUpload(file)) {
+          console.log(this.beforeAvatarUpload(file));
+          console.log(file);
+          this.viewpic = file.url;
+          this.showpic = true;
+
+          file.name = this.Getfilesname();
+          console.log("选中了" + file.name);
+        } else {
+          this.$message({
+            type: "error",
+            message: "上传文件只能是图片且不能大于6M"
+          });
+        }
+        // console.log(this.fileList)
+      },
+
+      /* submituploads: function (content)
+              {
+                  axios({
+                      method: 'post',
+                      url: '/WebSite1222/savedoc.aspx',
+                      data: {
+                          firstName: 'Fred',
+                          lastName: 'Flintstone'
+                      }
+                  });
+              },
+              */
+
+      // `onUploadProgress` 允许为上传处理进度事件
+      myprogress: function(e) {
+        this.Btnuse = true;
+        var i = 0;
+        if (e.lengthComputable) {
+          i = Math.floor((e.loaded / e.total) * 100);
+          this.progressnum = i;
+          console.log(i);
+        }
+      },
+
+      submitUpload: function(content) {
+        //自定义的上传图片的方法
+        //1. 创建formData 利用AXIOS传递
+        //   let formData = new FormData;
+        //   console.log(this.$refs.upload.data)
+        //   formData.append('filename', this.$refs.upload.data.filename);
+        //    var filenames = moment().format('YYYYMMDDHHmmssSSS') + Number.parseInt(Math.random() * 1000, 10);
+        var filenames = this.Getfilesname();
+        var itemid = this.getPara()[0].value;
+        let formData = new FormData();
+        let files;
+        if (content.file) {
+          files = this.beforeAvatarUpload(content.file);
+        }
+        console.log(content.file);
+        console.log(files);
+        //    content.onProgress=function()
+        //   {
+        //         this.progressnum+=1
+        //         console.log(this.progressnum)
+        //         return   this.progressnum
+        //   }
+        formData.append("file", content.file);
+        formData.append("Itemid", itemid);
+        formData.append("filename", filenames);
+        //progressEvent.total==92182
+        let config = {
+          "Content-Type": "multipart/form-data",
+          onUploadProgress: progressEvent => this.myprogress(progressEvent)
+          //    f (event.lengthComputable) { //　var percentComplete = event.loaded / event.total;
+          //  onUploadProgress: progressEvent => console.log(progressEvent.loaded)
+        };
+        let var_this = this;
+        axios
+          .post("/savedoc.aspx", formData, config)
+          .then(function(response) {
+            //   console.log(response);
+            //   console.log(content.file);
+            var_this.status = response.status;
+            if (response.status == "200") {
+              var_this.$message({
+                message: "审批表上传成功",
+                type: "success"
+              });
+              this.UploadStatus = "success";
+              console.log(response.status);
+            }
+          })
+          .catch(function(error) {
+            if (error) {
+              var_this.$message({
+                message:
+                  "你上传审批表失败了，也许因为上传图片过大,建议缩小图片尺寸",
+                type: "error"
+              });
+              var_this.UploadStatus = "exception";
+            }
+          });
+      },
+
+      beforeAvatarUpload(file) {
+        const extension = file.name.split(".")[1] === "jpg";
+        const extension2 = file.name.split(".")[1] === "jpeg";
+
+        const isLt2M = file.size / 1024 / 1024 < 10;
+        if (!extension && !extension2) {
+          console.log("上传模板只能是 jpg jpge 格式!");
+        }
+        if (!isLt2M) {
+          console.log("上传模板大小不能超过 10MB!");
+        }
+        return extension || (extension2 && isLt2M);
+      },
+      selectfiles(file) {
+        const self = this;
+
+        this.$refs.upload.data.filename = file.name;
+        console.log(this.$refs.upload.data);
+        //这个很重要！
+
+        //  var reader = new FileReader();
+        //    reader.readAsDataURL(file);
+        //    reader.onload = function () {
+        //       self.upLoadData.img_base64 = this.result;
+        //       let imgfiles = self.upLoadData.img_base64
+        //       console.log(imgfiles);
+        //       this.dataUrl = imgfiles
+        //   }
+      },
+
+      UploadFileSuccess(response, file, fileList) {
+        console.log(response.data.status);
+
+        let status = file.status;
+        if (status == "success") {
+          this.$message({
+            message: "上传审批表成功！",
+            type: "success"
+          });
+        }
+      },
+      getPara() {
+        var url = window.location.href;
+        if (url.indexOf("?") > -1) {
+          var result = [];
+          var paraStr = url.split("?")[1];
+          var paraItems = paraStr.split("&");
+          for (var i = 0; i < paraItems.length; i++) {
+            var paraKey = paraItems[i].split("=")[0];
+            var paraValue = paraItems[i].split("=")[1];
+            result.push({
+              key: paraKey,
+              value: paraValue
+            });
+          }
+
+          return result;
+        } else {
+          console.log("该URL中不含参数");
+        }
+      },
+
+      handlePictureCardPreview(file) {
+        this.dialogImageUrl = file.url;
+        this.dialogVisible = true;
+      },
+      handleRemove(file, fileList) {
+        console.log(file);
+      },
+
+      handlePreview(file) {
+        console.log(file);
+      },
+      handleExceed(files, fileList) {
+        this.$message.warning(
+          `当前限制选择 3 个文件，本次选择了 ${
+            files.length
+          } 个文件，共选择了 ${files.length + fileList.length} 个文件`
+        );
+      },
+      beforeRemove(file, fileList) {
+        return this.$confirm(`确定移除 ${file.name}？`);
+      },
+
+      submitfilesupload() {
+        this.$refs.upload.submit();
+      }
+    }
+  });
+</script>
