@@ -2,9 +2,11 @@ const Rednet = require("../rednet/index");
 const ApprovalFormModel = require("../ApprovalForm/index"); //方法来自审批表取数据接口
 
 class RednetController {
-  static async updataArticleISsend(ctx) {
-    let ID = ctx.query.ID;
-    let status = await Rednet.IsSend(ID);
+  static async updataArticleISsendAndRednet(ctx) {
+    // let ID = ctx.query.ID;
+    let data=ctx.request.query
+    console.log(data)
+    let status = await Rednet.updateSendstatusAndRednet(data);
 
     if (status) {
       console.log("修改失败！");
@@ -63,8 +65,10 @@ class RednetController {
       body.Inputer = s.Inputer;
       body.IsSendShaoYang = s.IsSendShaoYang;
       body.syContentID = s.syContentID;
+      body.RednetID = s.RednetID;
+      body.rednetUrl = s.rednetUrl;
       ctx.body = {
-        body
+        body       
       };
     }
   }

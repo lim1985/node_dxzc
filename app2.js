@@ -2,6 +2,7 @@
 
 const path = require("path");
 const app = new Koa();
+
 const router = require("./router/index");
 const cors = require("koa-cors");
 const bodyparser = require("koa-bodyparser");
@@ -20,8 +21,8 @@ app.use(static(path.join(__dirname, "./uploadfiles/")));
 app.use(
   koaBody({
     multipart: true,
-    formLimit: "10mb",
-    jsonLimit: "10mb",
+    formLimit: "100mb",
+    jsonLimit: "100mb",
     formidable: {
       // uploadDir: path.join(__dirname, `/uploadfiles/`),
       maxFileSize: 3000 * 1024 * 1024 // 设置上传文件大小最大限制，默认2M
@@ -29,7 +30,7 @@ app.use(
   })
 );
 
-app.use(bodyparser({ multipart: true, formLimit: "10mb", jsonLimit: "10mb" }));
+app.use(bodyparser({ multipart: true, formLimit: "100mb", jsonLimit: "100mb" }));
 
 //    .use(bodyparser({jsonLimit: '10mb'}))
 //    .use(bodyparser({formLimit: '10mb'}))

@@ -2,8 +2,10 @@ const readfiles = require("../Readfiles/index");
 const ApprovalFormModel = require("../ApprovalForm/index"); //方法来自审批表取数据接口
 
 class readfilesController {
-  static async singleImageUpload(ctx) {
-    let res = await readfiles.singleImageUpload(ctx);
+
+ 
+  static async singlefileUpload(ctx) {
+    let res = await readfiles.singlefileUpload(ctx);
     let result = {
       code: -1,
       msg: "上传失败"
@@ -18,6 +20,30 @@ class readfilesController {
     ctx.body = {
       result
     };
+  }
+  static async singleImageUpload(ctx) {
+    let res = await readfiles.singleImageUpload(ctx);
+    
+    if (!res.isok) {
+      ctx.body = {
+         result:{
+          code: -1,
+          msg: "上传失败"
+        }
+      };
+    }
+    else
+    {
+   
+      ctx.body = {
+        result:{
+          code: 10000,
+          msg: "上传成功",
+          res:res
+        }
+      };
+    }
+   
   }
   static async singleUpload(ctx) {
     let res = await readfiles.newUploads(ctx);

@@ -97,6 +97,18 @@ module.exports = function(sequelize, DataTypes) {
       siteUrl: {
         type: DataTypes.TEXT,
         allowNull: true
+      },
+      UrlType:{//省级媒体/0/1/2
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      RednetID:{
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      rednetUrl:{
+        type: DataTypes.STRING,
+        allowNull: true
       }
     },
     {

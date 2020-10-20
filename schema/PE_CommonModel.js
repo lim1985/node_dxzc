@@ -29,6 +29,15 @@ module.exports = function(sequelize, DataTypes) {
         type: DataTypes.STRING,
         allowNull: false
       },
+      InputDepartmentName: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      InputerDepID: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      
       Inputer: {
         type: DataTypes.STRING,
         allowNull: true

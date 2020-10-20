@@ -130,6 +130,25 @@ class redNet {
       c
     };
   }
+  static async updateSendstatusAndRednet(data) {
+    ArticleModel.update(
+      { IsNotSend: true ,
+        RednetID:data.RednetID,
+        rednetUrl:data.rednetUrl
+      },
+      {
+        where: {
+          ID: data.ID
+        }
+      }
+    )
+      .then(res => {
+        console.log(res);
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
   static async IsSend(s, next) {
     ArticleModel.update(
       { IsNotSend: true },

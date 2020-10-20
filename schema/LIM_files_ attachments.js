@@ -42,6 +42,18 @@ module.exports = function(Sequelize, DataTypes) {
         type: DataTypes.INTEGER,
         allowNull: true
       },
+      filewords: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      fileType: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      realfile_Name: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
       md5: {
         type: DataTypes.STRING,
         allowNull: true,

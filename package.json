@@ -27,6 +27,7 @@
     "node-uuid": "^1.4.8",
     "nodemailer": "^5.1.1",
     "nodemon": "^2.0.4",
+    "officegen": "^0.6.4",
     "path": "^0.12.7",
     "sequelize": "^4.42.0",
     "tedious": "^4.1.3",

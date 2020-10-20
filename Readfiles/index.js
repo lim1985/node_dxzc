@@ -5,7 +5,9 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 const ApprovalFormModel = require("../ApprovalForm/index");
 const images = require("images");
+const request = require('request');
 var moment = require("moment");
+const { resolve } = require("path");
 class Readfiles {
   static async GoMail(ctx) {
     // console.log(ctx.request.query);
@@ -194,6 +196,7 @@ class Readfiles {
   }
   static getStat(path) {
     return new Promise((resolve, reject) => {
+   
       fs.stat(path, (err, stats) => {
         if (err) {
           resolve(false);
@@ -223,66 +226,432 @@ class Readfiles {
   //        content=`<p>${intors}</p><p style="text-align: center;"><img src="${localhost}${newfilePath}" width="680"/></p><p>${imgtext}</p>`
   //     }
   // }
-  static singleImageUpload(ctx) {
+  static singlefileUpload(ctx) {
     return new Promise(async (resolve, reject) => {
-      let files = ctx.request.files.file;
-      let _size = files.size / 1024;
-      let _GeneralID = ctx.request.body.GeneralID;
-      let _extension = files.type.split("/")[1];
-      let imgtext = ctx.request.body.imgtext;
-      console.log(imgtext);
+      let file = ctx.request.files.file;
+      let _filetext = ctx.request.body.filetext;
+      let _filewords = ctx.request.body.filewords;
+      let fileExt = ctx.request.body.fileExt;
+      let _filename = ctx.request.body.fileName;
+      let _size = file.size / 1024;
+      // files.append("file", file);
+      // files.append("filetext", fileText);
+      // files.append("filewords", filewords);
+      // files.append("fileExt", fileExt);
+      let _extension = fileExt  
       let _localhost = "https://wx.daxiang.gov.cn/";
       let dirname = Readfiles.initfilesdir();
+      let _dirstatus = await Readfiles.getStat(dirname);
+      console.log(_dirstatus)
+      if (!_dirstatus) {
+        //判断是否有目录
+
+        fs.mkdir(dirname, { recursive: true }, err => {
+          if (err) throw err;
+        });
+      }
+      let targetfilePath="";
       let _content = "";
-      if (!files.length) {
+      let _fileType = file.type.split("/")[0];     
+      let _filePath=""
+      console.log(file)
+        
+          if(file)
+          {
+            console.log(_fileType)
+              if(_fileType!=='application')
+              {
+                   _filename =_filename+'.'+fileExt
+                  let _newfilename =_filename + "_lim" + "." +fileExt
+               
+                  const reader = fs.createReadStream(file.path);
+                 _filePath = path.join(dirname) + `\\${_filename}`;
+                  let _newfilePath = path.join(dirname) + `\\${_newfilename}`;              
+                  const upStream = fs.createWriteStream(_filePath);
+                  await reader.pipe(upStream);
+                  // await ApprovalFormModel.addFiles({real_file:_newfilePath,localhost:localhost,caption:imgtext,size:files.size / 1024,path:dirname,name:_filename,GeneralID:GeneralID,extension:files.type.split('\/')[1]})
+                  targetfilePath = _filePath;
+                  if (file.size / 1024 >= 1024) {
+                    setTimeout(async () => {
+                      await images(_filePath)
+                        .size(1024)
+                        .save(_newfilePath);
+                    }, 1000);
+                    targetfilePath = _newfilePath;                 
+                  }
+                  _content = `<p style="text-align: center;"><img src="${_localhost}${targetfilePath}" width="680"/></p><p style="text-align: center;">${_filetext}</p>`;
+                }
+                else
+                {
+                  console.log(`到这里了`)
+                   _filename =_filename+'.'+fileExt
+                  const reader = fs.createReadStream(file.path);
+                   _filePath = path.join(dirname) + `\\${_filename}`;
+                  const upStream = fs.createWriteStream(_filePath);
+                  await reader.pipe(upStream);
+                  targetfilePath = _filePath;
+                  _content = `<p align="center"><a href="${_localhost}${targetfilePath}">${file.name.split('.')[0]}</a></p>
+                  <p style="text-align: center;">${_filetext}</p>`;
+                }
+                
+                  let _file = {
+                    fileType:_fileType,
+                    realfile_Name:file.name.split('.')[0],
+                    localhost: _localhost,                  
+                    filetext:_filetext,
+                    filewords:_filewords,
+                    extension: _extension,
+                    name: _filename,
+                    real_file: targetfilePath,
+                    filepath: _filePath,
+                    size: _size,
+                    path: dirname,
+                    content: _content,
+                    caption: _filetext
+                  };
+                  resolve({ isok: true, _file });
+                
+              }  
+    });
+  }
+  static getRandomNum() {
+    let Min = 10000000000;
+    let Max = 99999999999;
+    let sayle=  Readfiles.Getfilesname()
+    let Range =sayle * Max - Min ;
+    let Rand = Math.random();
+    return Min + Math.round(Rand * Range);
+  }
+  static Getfilesname() {
+    var myDate = new Date();
+    var myYear = myDate.getFullYear();
+    var myMonth = myDate.getMonth() + 1;
+    var mydate = myDate.getDate();
+    var myHour = myDate.getHours();
+    var myMinute = myDate.getMinutes();
+    var mySecond = myDate.getSeconds();
+    var mytMilliSecond = myDate.getMilliseconds();
+    return (    
+      myYear +
+      myMonth +
+      mydate +
+      myHour +
+      myMinute +
+      mySecond +
+      mytMilliSecond *1
+    );
+  }
+  static async initimages(imgpath,newimgpath)
+  {
+    return new Promise(async(resolve)=>{
+      let _ss=await images(imgpath)
+        .size(1024)
+        .save(newimgpath)
+        resolve(_ss)
+    })
+      //   let _ss=await images(imgpath)
+      //   .size(1024)
+      //   .save(newimgpath)
+      // return _ss
+  }
+  static async  createFileisok(upStream,reader){
+    return new Promise(async(resolve,reject)=>{
+      let res=  await reader.pipe(upStream)
+      resolve(res)
+      })     
+  }
+   static async downloadFile(imgPath,callback)
+   {
+     console.log(imgPath)
+    // let imgpath='http://info.dxzc.gov.cn/UploadFiles/2020/7/2020715222520.png'
+    let fileName = path.basename(imgPath);
+
+     console.log(fileName)
+    let dirname= Readfiles.initfilesdir()+'/'
+    let fileDownloadPath =  Readfiles.initfilesdir()+'/'+fileName;
+
+     console.log(fileDownloadPath);
+    let exist = fs.existsSync(fileDownloadPath);
+    let _ismkdir=false
+    if(!exist)
+    {
+        // 创建目录
+        _ismkdir=new Promise((resolve,reject)=>{
+          fs.mkdir(dirname, { recursive: true }, async err =>{
+                if (err)
+                {
+                  reject(err)
+                  throw err;                      
+                }
+                else
+                {
+                  resolve(true)
+                }
+            })
+        })   
+
+        if(await _ismkdir)
+        {
+          setTimeout(() => {
+            let writeStream = fs.createWriteStream(fileDownloadPath);
+            let readStream = request(imgPath);
+           
+
+            readStream.pipe(writeStream);
+            readStream.on('end', function ()
+             {
+              readStream.end();
+              callback(fileDownloadPath, 'success');
+              // console.log(`文件下载成功${fileDownloadPath}`);
+             });
+          
+            readStream.on('error', function (error) {
+              writeStream.end();
+              fs.unlinkSync(fileDownloadPath);
+              // console.log(`错误信息:${error}`);
+              // 下载失败的，重新下载TODO
+              readStream.end();
+              callback(null, 'fail');
+              // setTimeout(() => {
+              //   bagpipe.push(downloadFile, imgPath, function (err,data) {
+              //   });
+              // }, 5000);
+            })
+            writeStream.on("finish", function () {
+              readStream.end();
+              writeStream.end();
+            })
+            .on('error',function(err){
+              readStream.end();
+              writeStream.end();
+              // console.log(`文件写入失败}`);
+            });
+          }, 800);
+          
+        }
+        else
+          {
+            console.log('this file is existed');
+          }
+        }
+        else
+        {
+         // let filesurl=imgPath.match(/[\d\/]+/)
+         callback(fileDownloadPath, 'success');
+        }
+
+	
+	}
+        
+ 
+  static singleImageUpload(ctx)
+  {
+    return new Promise(async (resolve, reject) => {
+  
+      let files = ctx.request.files.file;   
+      let fileName=''     
+      let _size = files.size / 1024;
+      let _GeneralID = ctx.request.body.GeneralID;    
+      let _extension = files.type.split("/")[1]; 
+      let imgtext = ctx.request.body.imgtext;    
+       //  let _localhost = "http://172.20.8.28:3002/";
+      let _localhost = "https://wx.daxiang.gov.cn/";
+      let dirname = Readfiles.initfilesdir();
+
+      let _content = "";
+     // let fileType = files.type.split("/")[0];
+      fileName=files.name==='blob'?Readfiles.getRandomNum():files.name
+    //  files.name=='blob'?fileName=Readfiles.getRandomNum():fileName=file.name
+       
+      if (!files.length)
+       {
         let _filename =
           files.type.split("/")[1] == "jpeg"
-            ? files.name + "." + "jpg"
-            : files.name + "." + "png";
+            ? fileName + "." + "jpg"
+            : fileName + "." + "png";
         let _newfilename =
           files.type.split("/")[1] == "jpeg"
-            ? files.name + "_lim" + "." + "jpg"
-            : files.name + "_lim" + "." + "png";
-        const reader = fs.createReadStream(files.path);
+            ? fileName + "_lim" + "." + "jpg"
+            : fileName + "_lim" + "." + "png";
+        const reader = fs.createReadStream(files.path,{start:0});
+    
         let _dirstatus = await Readfiles.getStat(dirname);
         let _filePath = path.join(dirname) + `\\${_filename}`;
         let _newfilePath = path.join(dirname) + `\\${_newfilename}`;
-        if (!_dirstatus) {
-          //判断是否有目录
-          fs.mkdir(dirname, { recursive: true }, err => {
-            if (err) throw err;
-          });
+        let _ismkdir=false
+   
+        if (!_dirstatus) 
+        {
+          _ismkdir=new Promise((resolve,reject)=>{
+            fs.mkdir(dirname, { recursive: true }, async err =>{
+                  if (err)
+                  {
+                    throw err;                      
+                  }
+                  else
+                  {
+                    resolve(true)
+                  }
+              })
+          })           
         }
-        const upStream = fs.createWriteStream(_filePath);
-        await reader.pipe(upStream);
-        // await ApprovalFormModel.addFiles({real_file:_newfilePath,localhost:localhost,caption:imgtext,size:files.size / 1024,path:dirname,name:_filename,GeneralID:GeneralID,extension:files.type.split('\/')[1]})
-        let targetfilePath = _filePath;
-        if (files.size / 1024 > 1024) {
-          setTimeout(async () => {
-            await images(_filePath)
-              .size(1024)
-              .save(_newfilePath);
-          }, 300);
-          targetfilePath = _newfilePath;
+        else
+        {
+          _ismkdir=true
+        }        
+         // console.log(await _ismkdir);
+          if(await _ismkdir)
+          {
+              const upStream = fs.createWriteStream(_filePath);   
+              let [_fileerr,_filedata]=  await Readfiles.createFileisok(upStream,reader).then(data=>[null, data]).catch(err=> [err, null])
+            
+              let targetfilePath
+              if(_filedata)
+              {
+                targetfilePath=_filePath
+                console.log(`有文件`)
+                console.log(files.size / 1024 >= 1024)
+                if (files.size / 1024 >= 1024) 
+                {              
+                    setTimeout(async () => {
+                      await images(_filePath)
+                        .size(1024)
+                        .save(_newfilePath);
+                    }, 1000);
+                    targetfilePath = _newfilePath;
+                  
           // defaultPic=`${localhost}${_newfilePath}`
-        }
-        _content = `<p style="text-align: center;"><img src="${_localhost}${targetfilePath}" width="680"/></p><p>${imgtext}</p>`;
-        let imgs = {
-          localhost: _localhost,
-          GeneralID: _GeneralID,
-          extension: _extension,
-          name: _filename,
-          real_file: _newfilePath,
-          _filePath,
-          size: _size,
-          path: dirname,
-          content: _content,
-          caption: imgtext
-        };
-        resolve({ isok: true, imgs });
-      }
-    });
-  }
+                }
+                console.log(targetfilePath)
+               _content = `<p style="text-align: center;"><img src="${_localhost}${targetfilePath}" width="680"/></p><p>${imgtext}</p>`;
+              let imgs = {
+                localhost: _localhost,
+                GeneralID: _GeneralID,
+                extension: _extension,
+                name: _filename,
+                real_file: targetfilePath,
+                _filePath,
+                size: _size,
+                path: dirname,
+                content: _content,
+                caption: imgtext
+             };
+              resolve({ isok: true, imgs });
+         }
+              else
+              {
+                reject({isok:false})
+                console.log(`有错误文件`)
+              }
+         }           
+    }
+  })
+}
+          //判断是否有目录
+        //   let ismkdir= new Promise((resolve)=>{
+        //   fs.mkdir(dirname, { recursive: true }, async err =>{
+        //     if (err)
+        //     {
+        //       throw err;                      
+        //     }
+        //     else
+        //     {
+        //       console.log('ok!');
+        //       console.log(_filePath)
+        //       resolve(true)
+        //       // const upStream = fs.createWriteStream(_filePath);      
+        //       // let [_filedata,_fileerr]=  await Readfiles.createFileisok(upStream,reader).then(data=>[null, data]).catch(err=> [err, null])
+        //       // console.log(_filedata)
+        //       // console.log(_fileerr)
+        //       // let createFileisok=()=>{
+        //       //   return new Promise(async(resolve,reject)=>{
+        //       //   let res=  await reader.pipe(upStream)
+        //       //   resolve(res)
+        //       //   })                
+        //       // }            
+        //     }      
+        //   });
+        // }) 
+        //    let ismkdir=()=>{
+        //      return new Promise(resolve=>{
+        //          fs.mkdir(dirname, { recursive: true }, async err =>{
+        //         if (err)
+        //         {
+        //           throw err;                      
+        //         }
+        //         else
+        //         {
+        //           resolve(true)
+        //         }
+        //      })
+        //    })            
+        // }
+        // console.log(await ismkdir())
+        // else
+        // {       
+          // const upStream = fs.createWriteStream(_filePath);
+          // let [_data,_err]=  await Readfiles.createFileisok(upStream,reader).then(data=>[null, data]).catch(err=> [err, null])
+          //    console.log(_data)
+          //    console.log(_err)
+         // createFileisok= await reader.pipe(upStream);         
+        //  let createFileisok=()=>{
+        //   return new Promise(async(resolve,reject)=>{
+        //   let res=  await reader.pipe(upStream) 
+        //   resolve(res)
+        //   })                
+        // } 
+       
+        // }
+        // await ApprovalFormModel.addFiles({real_file:_newfilePath,localhost:localhost,caption:imgtext,size:files.size / 1024,path:dirname,name:_filename,GeneralID:GeneralID,extension:files.type.split('\/')[1]})
+       // console.log(createFileisok.path)
+      //  console.log(createFileisok)
+    
+      // let [filedata,fileErr]=await createFileisok().then(data=> [data,null]).catch(err=>[null,err])
+      // console.log(filedata)
+      // console.log(fileErr)
+        // if(!filedata)
+        // {       
+        // console.log(`失败了`)
+        // }
+        // else
+        // {
+        //   console.log(`成功了`)
+        //   let targetfilePath = _filePath;
+        //   let imagesisok='还没开始'
+        // if (files.size / 1024 >= 1024) 
+        // {
+      
+        //  // imagesisok =await Readfiles.initimages(_filePath,_newfilePath);
+          
+        //   setTimeout(async () => {
+        //    imagesisok=  await images(_filePath)
+        //       .size(1024)
+        //       .save(_newfilePath);
+        //   }, 1000);
+        //   targetfilePath = _newfilePath;
+        //   // defaultPic=`${localhost}${_newfilePath}`
+       
+        // }
+        // console.log(`转换成功了`)
+     
+        // _content = `<p style="text-align: center;"><img src="${_localhost}${targetfilePath}" width="680"/></p><p>${imgtext}</p>`;
+        // let imgs = {
+        //   localhost: _localhost,
+        //   GeneralID: _GeneralID,
+        //   extension: _extension,
+        //   name: _filename,
+        //   real_file: targetfilePath,
+        //   _filePath,
+        //   size: _size,
+        //   path: dirname,
+        //   content: _content,
+        //   caption: imgtext
+        // };
+        // resolve({ isok: true, imgs });
+        // }
+        
+     
+ 
   static async newUploads(ctx) {
     return new Promise(async (resolve, reject) => {
       let files = ctx.request.files.file;
